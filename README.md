@@ -20,6 +20,7 @@ Exposes Pact Broker data â€” providers, consumers, pacts, and provider states â€
 | `can_i_deploy` | Check if a pacticipant version can be safely deployed to an environment |
 | `list_environments` | List all environments registered in the Pact Broker |
 | `get_branches` | Get all branches for a specific pacticipant |
+| `get_branch_version` | Get the latest version for a specific branch of a pacticipant |
 
 ---
 
@@ -131,6 +132,8 @@ Once connected, you can ask Claude things like:
 > "What environments are available in the Pact Broker?"
 
 > "Show me all branches for the PaymentService"
+
+> "What's the latest version of the main branch for BonusAPI?"
 
 ---
 

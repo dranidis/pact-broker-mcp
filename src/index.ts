@@ -12,7 +12,7 @@
  *   tsx src/index.ts
  */
 
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
@@ -23,6 +23,7 @@ import { ZodError } from "zod";
 import {
   canIDeploy,
   getBranches,
+  getBranchLatestVersion,
   getConsumerPacts,
   getPact,
   getPacticipant,
@@ -35,6 +36,7 @@ import {
 } from "./pact-broker-client.js";
 
 import {
+  BranchVersionSchema,
   CanIDeploySchema,
   ConsumerNameSchema,
   EmptySchema,
@@ -43,6 +45,7 @@ import {
   ProviderNameSchema,
   TOOL_CAN_I_DEPLOY,
   TOOL_GET_BRANCHES,
+  TOOL_GET_BRANCH_VERSION,
   TOOL_GET_CONSUMER_PACTS,
   TOOL_GET_PACT,
   TOOL_GET_PACTICIPANT,
@@ -57,7 +60,7 @@ import {
 // Server setup
 // ---------------------------------------------------------------------------
 
-const server = new Server(
+const mcpServer = new McpServer(
   {
     name: "pact-broker-mcp",
     version: "0.1.0",
@@ -68,6 +71,9 @@ const server = new Server(
     },
   },
 );
+
+// Access underlying server for low-level request handlers
+const server = mcpServer.server;
 
 // ---------------------------------------------------------------------------
 // Tool listing
@@ -124,6 +130,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       name: TOOL_GET_BRANCHES.name,
       description: TOOL_GET_BRANCHES.description,
       inputSchema: zodToJsonSchema(TOOL_GET_BRANCHES.schema),
+    },
+    {
+      name: TOOL_GET_BRANCH_VERSION.name,
+      description: TOOL_GET_BRANCH_VERSION.description,
+      inputSchema: zodToJsonSchema(TOOL_GET_BRANCH_VERSION.schema),
     },
   ],
 }));
@@ -387,6 +398,34 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       // -----------------------------------------------------------------------
+      case TOOL_GET_BRANCH_VERSION.name: {
+        const input = BranchVersionSchema.parse(args);
+        const config = buildConfig();
+        const version = await getBranchLatestVersion(
+          config,
+          input.pacticipant,
+          input.branch,
+        );
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                {
+                  version: version.number,
+                  branch: version.branch,
+                  buildUrl: version.buildUrl,
+                  createdAt: version.createdAt,
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      }
+
+      // -----------------------------------------------------------------------
       default:
         return {
           content: [
@@ -498,7 +537,7 @@ function zodToJsonSchema(
 
 async function main() {
   const transport = new StdioServerTransport();
-  await server.connect(transport);
+  await mcpServer.connect(transport);
   // MCP servers communicate over stdio — logging goes to stderr
   console.error("Pact Broker MCP server running on stdio");
 }

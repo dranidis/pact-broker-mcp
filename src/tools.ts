@@ -36,6 +36,11 @@ export const CanIDeploySchema = z.object({
     .describe("Target environment name (e.g., 'production', 'staging')"),
 });
 
+export const BranchVersionSchema = z.object({
+  pacticipant: z.string().describe("Name of the pacticipant"),
+  branch: z.string().describe("Name of the branch"),
+});
+
 // ---------------------------------------------------------------------------
 // Tool metadata (name + description used when registering with MCP)
 // ---------------------------------------------------------------------------
@@ -108,4 +113,10 @@ export const TOOL_GET_BRANCHES = {
   description:
     "Get all branches for a specific pacticipant. Branches are used for versioning and tracking different development streams.",
   schema: PacticipantNameSchema,
+} as const;
+
+export const TOOL_GET_BRANCH_VERSION = {
+  name: "get_branch_version",
+  description: "Get the latest version for a specific branch of a pacticipant.",
+  schema: BranchVersionSchema,
 } as const;

@@ -165,6 +165,20 @@ export interface BranchesResponse {
   branches: Branch[];
 }
 
+export interface BranchVersion {
+  number: string;
+  buildUrl?: string;
+  createdAt?: string;
+  pacticipant?: {
+    name: string;
+  };
+  branch?: string;
+  _links?: {
+    self: { href: string };
+    [key: string]: unknown;
+  };
+}
+
 // ---------------------------------------------------------------------------
 // HTTP helper
 // ---------------------------------------------------------------------------
@@ -371,6 +385,20 @@ export async function getBranches(
   )}/branches`;
   const data = await fetchJSON<{ _embedded: BranchesResponse }>(url, config);
   return data._embedded?.branches ?? [];
+}
+
+/**
+ * Get the latest version for a specific branch of a pacticipant.
+ */
+export async function getBranchLatestVersion(
+  config: PactBrokerConfig,
+  pacticipantName: string,
+  branchName: string,
+): Promise<BranchVersion> {
+  const url = `${config.brokerUrl}/pacticipants/${encodeURIComponent(
+    pacticipantName,
+  )}/branches/${encodeURIComponent(branchName)}/latest-version`;
+  return fetchJSON<BranchVersion>(url, config);
 }
 
 // ---------------------------------------------------------------------------
