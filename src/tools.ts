@@ -38,6 +38,15 @@ export const PreviousDistinctPactSchema = z.object({
     ),
 });
 
+export const PactVersionSchema = z.object({
+  consumer_name: z.string().describe("Name of the consumer pacticipant"),
+  provider_name: z.string().describe("Name of the provider pacticipant"),
+  consumer_version: z
+    .string()
+    .describe(
+      "Consumer version number for the pact (e.g., '1.2.3') used to look up the pact and its pact-version UUID.",
+    ),
+});
 
 export const CanIDeploySchema = z.object({
   pacticipant: z.string().describe("Name of the pacticipant to deploy"),
@@ -110,6 +119,13 @@ export const TOOL_GET_PREVIOUS_DISTINCT_PACT = {
   description:
     "Fetch the previous distinct pact for a provider/consumer at a given consumer version. Returns the full pact JSON for the previous distinct pact, or null if there isn't one.",
   schema: PreviousDistinctPactSchema,
+} as const;
+
+export const TOOL_GET_PACT_VERSION = {
+  name: "get_pact_version",
+  description:
+    "Get the Pact Broker pact-version UUID for a pact identified by provider, consumer, and consumer version.",
+  schema: PactVersionSchema,
 } as const;
 
 export const TOOL_CAN_I_DEPLOY = {

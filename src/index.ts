@@ -27,6 +27,7 @@ import {
   getConsumerPacts,
   getPact,
   getPacticipant,
+  getPactVersion,
   getPreviousDistinctPact,
   getProviderPacts,
   getProviderStates,
@@ -41,6 +42,7 @@ import {
   CanIDeploySchema,
   ConsumerNameSchema,
   EmptySchema,
+  PactVersionSchema,
   PreviousDistinctPactSchema,
   PacticipantNameSchema,
   PactPairSchema,
@@ -51,6 +53,7 @@ import {
   TOOL_GET_CONSUMER_PACTS,
   TOOL_GET_PACT,
   TOOL_GET_PACTICIPANT,
+  TOOL_GET_PACT_VERSION,
   TOOL_GET_PREVIOUS_DISTINCT_PACT,
   TOOL_GET_PROVIDER_PACTS,
   TOOL_GET_PROVIDER_STATES,
@@ -118,6 +121,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       name: TOOL_GET_PACT.name,
       description: TOOL_GET_PACT.description,
       inputSchema: zodToJsonSchema(TOOL_GET_PACT.schema),
+    },
+    {
+      name: TOOL_GET_PACT_VERSION.name,
+      description: TOOL_GET_PACT_VERSION.description,
+      inputSchema: zodToJsonSchema(TOOL_GET_PACT_VERSION.schema),
     },
     {
       name: TOOL_GET_PREVIOUS_DISTINCT_PACT.name,
@@ -325,6 +333,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: "text",
               text: JSON.stringify(pact, null, 2),
+            },
+          ],
+        };
+      }
+
+      // -----------------------------------------------------------------------
+      case TOOL_GET_PACT_VERSION.name: {
+        const input = PactVersionSchema.parse(args);
+        const config = buildConfig();
+        const result = await getPactVersion(
+          config,
+          input.consumer_name,
+          input.provider_name,
+          input.consumer_version,
+        );
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(result, null, 2),
             },
           ],
         };

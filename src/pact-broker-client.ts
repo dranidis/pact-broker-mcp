@@ -214,6 +214,21 @@ async function fetchJSON<T>(url: string, config: PactBrokerConfig): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+function firstHref(link: unknown): string | undefined {
+  if (!link) return undefined;
+  if (Array.isArray(link)) return link[0]?.href;
+  if (typeof link === "object" && link !== null && "href" in link) {
+    return (link as { href?: string }).href;
+  }
+  return undefined;
+}
+
+function extractPactVersionUuid(href: string): string | undefined {
+  // Common form: .../pact-version/<uuid>
+  const match = href.match(/\/pact-version\/([^/?#]+)(?:[?#].*)?$/);
+  return match?.[1];
+}
+
 // ---------------------------------------------------------------------------
 // Public API methods
 // ---------------------------------------------------------------------------
@@ -337,6 +352,56 @@ export async function getPact(
     providerName,
   )}/consumer/${encodeURIComponent(consumerName)}/latest`;
   return fetchJSON<Pact>(url, config);
+}
+
+/**
+ * Get the Pact Broker pact-version UUID for a pact identified by provider, consumer and consumer version.
+ */
+export async function getPactVersion(
+  config: PactBrokerConfig,
+  consumerName: string,
+  providerName: string,
+  consumerVersion: string,
+): Promise<{ pactVersion: string; pactVersionUrl?: string; pactUrl?: string }> {
+  const url = `${config.brokerUrl}/pacts/provider/${encodeURIComponent(
+    providerName,
+  )}/consumer/${encodeURIComponent(consumerName)}/version/${encodeURIComponent(
+    consumerVersion,
+  )}`;
+
+  const doc = await fetchJSON<unknown>(url, config);
+  if (typeof doc !== "object" || doc === null) {
+    throw new Error("Unexpected Pact Broker response when fetching pact");
+  }
+
+  const maybePactVersion = (doc as { pactVersion?: unknown }).pactVersion;
+  if (typeof maybePactVersion === "string" && maybePactVersion.length > 0) {
+    return { pactVersion: maybePactVersion };
+  }
+
+  const links = (doc as { _links?: Record<string, unknown> })._links;
+  const pactVersionHref = firstHref(
+    links?.["pb:pact-version"] ??
+      links?.["pb:pactVersion"] ??
+      links?.["pact-version"] ??
+      links?.["pactVersion"],
+  );
+
+  if (!pactVersionHref) {
+    throw new Error(
+      "pact-version link not found in Pact Broker response (missing _links['pb:pact-version'])",
+    );
+  }
+
+  const pactVersion =
+    extractPactVersionUuid(pactVersionHref) ?? pactVersionHref;
+  const pactHref = firstHref(links?.self);
+
+  return {
+    pactVersion,
+    pactVersionUrl: pactVersionHref,
+    pactUrl: pactHref,
+  };
 }
 
 /**
