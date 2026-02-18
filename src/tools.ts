@@ -28,6 +28,14 @@ export const PactPairSchema = z.object({
   provider_name: z.string().describe("Name of the provider pacticipant"),
 });
 
+export const CanIDeploySchema = z.object({
+  pacticipant: z.string().describe("Name of the pacticipant to deploy"),
+  version: z.string().describe("Version number or tag of the pacticipant"),
+  environment: z
+    .string()
+    .describe("Target environment name (e.g., 'production', 'staging')"),
+});
+
 // ---------------------------------------------------------------------------
 // Tool metadata (name + description used when registering with MCP)
 // ---------------------------------------------------------------------------
@@ -79,4 +87,11 @@ export const TOOL_GET_PACT = {
   description:
     "Fetch the full latest pact JSON between a specific consumer and provider, including all interactions.",
   schema: PactPairSchema,
+} as const;
+
+export const TOOL_CAN_I_DEPLOY = {
+  name: "can_i_deploy",
+  description:
+    "Check if a pacticipant version can be safely deployed to an environment. Returns deployment status based on verification results.",
+  schema: CanIDeploySchema,
 } as const;

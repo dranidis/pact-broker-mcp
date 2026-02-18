@@ -108,6 +108,25 @@ export interface ProviderStatesResponse {
   providerStates: ProviderStateWithConsumers[];
 }
 
+export interface CanIDeployResponse {
+  summary: {
+    deployable: boolean;
+    reason: string;
+    unknown?: number;
+  };
+  matrix?: Array<{
+    consumer: { name: string; version: { number: string } };
+    provider: { name: string; version: { number: string } };
+    verificationResult?: {
+      success: boolean;
+      verifiedAt?: string;
+    };
+    pact?: {
+      createdAt?: string;
+    };
+  }>;
+}
+
 // ---------------------------------------------------------------------------
 // HTTP helper
 // ---------------------------------------------------------------------------
@@ -266,6 +285,26 @@ export async function getPact(
     providerName,
   )}/consumer/${encodeURIComponent(consumerName)}/latest`;
   return fetchJSON<Pact>(url, config);
+}
+
+/**
+ * Check if a pacticipant version can be deployed to an environment.
+ * Uses the matrix API to determine deployment safety based on verification results.
+ */
+export async function canIDeploy(
+  config: PactBrokerConfig,
+  pacticipant: string,
+  version: string,
+  environment: string,
+): Promise<CanIDeployResponse> {
+  // Using the matrix endpoint with environment parameter
+  const url = new URL(`${config.brokerUrl}/matrix`);
+  url.searchParams.append("q[][pacticipant]", pacticipant);
+  url.searchParams.append("q[][version]", version);
+  url.searchParams.append("environment", environment);
+  url.searchParams.append("latestby", "cvp");
+
+  return fetchJSON<CanIDeployResponse>(url.toString(), config);
 }
 
 // ---------------------------------------------------------------------------

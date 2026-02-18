@@ -21,6 +21,7 @@ import {
 import { ZodError } from "zod";
 
 import {
+  canIDeploy,
   getConsumerPacts,
   getPact,
   getPacticipant,
@@ -32,11 +33,13 @@ import {
 } from "./pact-broker-client.js";
 
 import {
+  CanIDeploySchema,
   ConsumerNameSchema,
   EmptySchema,
   PacticipantNameSchema,
   PactPairSchema,
   ProviderNameSchema,
+  TOOL_CAN_I_DEPLOY,
   TOOL_GET_CONSUMER_PACTS,
   TOOL_GET_PACT,
   TOOL_GET_PACTICIPANT,
@@ -102,6 +105,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       name: TOOL_GET_PACT.name,
       description: TOOL_GET_PACT.description,
       inputSchema: zodToJsonSchema(TOOL_GET_PACT.schema),
+    },
+    {
+      name: TOOL_CAN_I_DEPLOY.name,
+      description: TOOL_CAN_I_DEPLOY.description,
+      inputSchema: zodToJsonSchema(TOOL_CAN_I_DEPLOY.schema),
     },
   ],
 }));
@@ -284,6 +292,33 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: "text",
               text: JSON.stringify(pact, null, 2),
+            },
+          ],
+        };
+      }
+
+      // -----------------------------------------------------------------------
+      case TOOL_CAN_I_DEPLOY.name: {
+        const input = CanIDeploySchema.parse(args);
+        const config = buildConfig();
+        const result = await canIDeploy(
+          config,
+          input.pacticipant,
+          input.version,
+          input.environment,
+        );
+
+        const deployable = result.summary.deployable;
+        const emoji = deployable ? "✅" : "❌";
+        const status = deployable ? "CAN DEPLOY" : "CANNOT DEPLOY";
+
+        return {
+          content: [
+            {
+              type: "text",
+              text:
+                `${emoji} ${status}\n\n${result.summary.reason}\n\n` +
+                JSON.stringify(result, null, 2),
             },
           ],
         };

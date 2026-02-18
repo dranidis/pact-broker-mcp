@@ -17,6 +17,7 @@ Exposes Pact Broker data â€” providers, consumers, pacts, and provider states â€
 | `get_provider_pacts` | Get latest pact versions for a provider (one per consumer) |
 | `get_consumer_pacts` | Get latest pact versions for a consumer (one per provider) |
 | `get_pact` | Fetch the full pact JSON for a consumer/provider pair |
+| `can_i_deploy` | Check if a pacticipant version can be safely deployed to an environment |
 
 ---
 
@@ -121,6 +122,10 @@ Once connected, you can ask Claude things like:
 
 > "Show me the full pact between the PaymentConsumer and PaymentProvider"
 
+> "Can I deploy PaymentService version 1.2.3 to production?"
+
+> "Is it safe to deploy the OrderConsumer version abc123 to staging?"
+
 ---
 
 ## Project Structure
@@ -136,8 +141,8 @@ src/
 
 ## Roadmap
 
+- [x] Can-I-deploy checks
 - [ ] Webhook management
-- [ ] Can-I-deploy checks
 - [ ] Version/tag management
 - [ ] Verification result publishing
 - [ ] Network (dependency graph) queries
