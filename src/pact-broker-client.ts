@@ -5,6 +5,8 @@
  * The Pact Broker follows HAL (Hypertext Application Language) for its API responses.
  */
 
+import fetch from "node-fetch";
+
 export interface PactBrokerConfig {
   brokerUrl: string;
   /** Basic auth token (base64 of user:password) — optional */
@@ -56,13 +58,33 @@ export interface PactVersion {
   pactUrl: string;
   createdAt?: string;
   _links: {
-    self: { href: string; name: string; title?: string };
+    self: { href: string; name?: string; title?: string };
     [key: string]: unknown;
   };
 }
 
-export interface LatestPactsResponse {
-  pacts: PactVersion[];
+// Raw API response structure from /pacts/latest endpoint
+interface LatestPactRawResponse {
+  createdAt?: string;
+  _embedded: {
+    consumer: {
+      name: string;
+      _embedded?: unknown;
+      _links?: unknown;
+    };
+    provider: {
+      name: string;
+      _links?: unknown;
+    };
+  };
+  _links: {
+    self: Array<{ href: string; name?: string; title?: string }>;
+    [key: string]: unknown;
+  };
+}
+
+interface LatestPactsApiResponse {
+  pacts: LatestPactRawResponse[];
 }
 
 export interface VerificationResult {
@@ -173,8 +195,22 @@ export async function getLatestPacts(
   config: PactBrokerConfig,
 ): Promise<PactVersion[]> {
   const url = `${config.brokerUrl}/pacts/latest`;
-  const data = await fetchJSON<{ _embedded: LatestPactsResponse }>(url, config);
-  return data._embedded?.pacts ?? [];
+  const data = await fetchJSON<LatestPactsApiResponse>(url, config);
+
+  // Transform the API response to match our PactVersion interface
+  return (data.pacts ?? []).map((rawPact) => ({
+    consumer: { name: rawPact._embedded.consumer.name },
+    provider: { name: rawPact._embedded.provider.name },
+    pactUrl: rawPact._links.self[0]?.href ?? "",
+    createdAt: rawPact.createdAt,
+    _links: {
+      self: {
+        href: rawPact._links.self[0]?.href ?? "",
+        name: rawPact._links.self[0]?.name,
+        title: rawPact._links.self[0]?.title,
+      },
+    },
+  }));
 }
 
 /**

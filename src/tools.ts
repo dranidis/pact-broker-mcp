@@ -3,37 +3,27 @@ import { z } from "zod";
 // ---------------------------------------------------------------------------
 // Shared argument schemas
 // ---------------------------------------------------------------------------
+// Note: Broker URL and authentication are now configured via environment variables:
+// - PACT_BROKER_BASE_URL: Base URL of the Pact Broker
+// - PACT_BROKER_USERNAME: Username for basic auth (optional)
+// - PACT_BROKER_PASSWORD: Password for basic auth (optional)
+// - PACT_BROKER_TOKEN: Bearer token for authentication (optional)
 
-export const BrokerUrlSchema = z.object({
-  broker_url: z
-    .string()
-    .url()
-    .describe("Base URL of the Pact Broker, e.g. https://broker.example.com"),
-  auth_token: z
-    .string()
-    .optional()
-    .describe(
-      "Optional Basic auth token (base64 of user:password). Takes precedence over bearer_token.",
-    ),
-  bearer_token: z
-    .string()
-    .optional()
-    .describe("Optional Bearer token for authentication."),
-});
+export const EmptySchema = z.object({});
 
-export const ProviderNameSchema = BrokerUrlSchema.extend({
+export const ProviderNameSchema = z.object({
   provider_name: z.string().describe("Name of the provider pacticipant"),
 });
 
-export const ConsumerNameSchema = BrokerUrlSchema.extend({
+export const ConsumerNameSchema = z.object({
   consumer_name: z.string().describe("Name of the consumer pacticipant"),
 });
 
-export const PacticipantNameSchema = BrokerUrlSchema.extend({
+export const PacticipantNameSchema = z.object({
   name: z.string().describe("Name of the pacticipant"),
 });
 
-export const PactPairSchema = BrokerUrlSchema.extend({
+export const PactPairSchema = z.object({
   consumer_name: z.string().describe("Name of the consumer pacticipant"),
   provider_name: z.string().describe("Name of the provider pacticipant"),
 });
@@ -46,14 +36,14 @@ export const TOOL_LIST_PACTICIPANTS = {
   name: "list_pacticipants",
   description:
     "List all pacticipants (both consumers and providers) registered in the Pact Broker.",
-  schema: BrokerUrlSchema,
+  schema: EmptySchema,
 } as const;
 
 export const TOOL_LIST_PROVIDERS = {
   name: "list_providers",
   description:
     "List all providers registered in the Pact Broker — i.e. pacticipants that appear as the provider in at least one pact.",
-  schema: BrokerUrlSchema,
+  schema: EmptySchema,
 } as const;
 
 export const TOOL_GET_PACTICIPANT = {

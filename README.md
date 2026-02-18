@@ -18,13 +18,20 @@ Exposes Pact Broker data â€” providers, consumers, pacts, and provider states â€
 | `get_consumer_pacts` | Get latest pact versions for a consumer (one per provider) |
 | `get_pact` | Fetch the full pact JSON for a consumer/provider pair |
 
-Every tool accepts these authentication arguments (all optional):
+---
 
-| Argument | Description |
-|----------|-------------|
-| `broker_url` | **Required.** Base URL, e.g. `https://broker.example.com` |
-| `auth_token` | Basic auth token (base64 of `user:password`) |
-| `bearer_token` | Bearer token |
+## Configuration
+
+The Pact Broker connection is configured via environment variables:
+
+| Environment Variable | Required | Description |
+|---------------------|----------|-------------|
+| `PACT_BROKER_BASE_URL` | **Yes** | Base URL of the Pact Broker, e.g. `https://broker.example.com` |
+| `PACT_BROKER_USERNAME` | No | Username for basic authentication |
+| `PACT_BROKER_PASSWORD` | No | Password for basic authentication |
+| `PACT_BROKER_TOKEN` | No | Bearer token for authentication (alternative to username/password) |
+
+**Authentication priority**: If both basic auth (username/password) and bearer token are provided, basic auth takes precedence.
 
 ---
 
@@ -32,7 +39,7 @@ Every tool accepts these authentication arguments (all optional):
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 18+ (required for native fetch support, or 16+ with the included polyfill)
 - npm / pnpm / yarn
 
 ### Install & Build
@@ -41,6 +48,8 @@ Every tool accepts these authentication arguments (all optional):
 npm install
 npm run build
 ```
+
+**Important**: After installing dependencies, restart Claude Desktop to pick up the changes.
 
 ### Development (with hot reload)
 
@@ -52,14 +61,36 @@ npm run dev
 
 ## Using with Claude Desktop
 
-Add the server to your `claude_desktop_config.json`:
+Add the server to your `claude_desktop_config.json` with environment variables:
 
 ```json
 {
   "mcpServers": {
     "pact-broker": {
       "command": "node",
-      "args": ["/absolute/path/to/pact-broker-mcp/dist/index.js"]
+      "args": ["/absolute/path/to/pact-broker-mcp/dist/index.js"],
+      "env": {
+        "PACT_BROKER_BASE_URL": "https://broker.example.com",
+        "PACT_BROKER_USERNAME": "your-username",
+        "PACT_BROKER_PASSWORD": "your-password"
+      }
+    }
+  }
+}
+```
+
+Or with bearer token authentication:
+
+```json
+{
+  "mcpServers": {
+    "pact-broker": {
+      "command": "node",
+      "args": ["/absolute/path/to/pact-broker-mcp/dist/index.js"],
+      "env": {
+        "PACT_BROKER_BASE_URL": "https://broker.example.com",
+        "PACT_BROKER_TOKEN": "your-bearer-token"
+      }
     }
   }
 }
@@ -84,9 +115,9 @@ claude mcp add pact-broker node /absolute/path/to/pact-broker-mcp/dist/index.js
 
 Once connected, you can ask Claude things like:
 
-> "List all providers in my pact broker at https://broker.mycompany.com"
+> "List all providers in my pact broker"
 
-> "What provider states does the OrderService have, according to the pact broker?"
+> "What provider states does the OrderService have?"
 
 > "Show me the full pact between the PaymentConsumer and PaymentProvider"
 

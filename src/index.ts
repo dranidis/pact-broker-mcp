@@ -32,8 +32,8 @@ import {
 } from "./pact-broker-client.js";
 
 import {
-  BrokerUrlSchema,
   ConsumerNameSchema,
+  EmptySchema,
   PacticipantNameSchema,
   PactPairSchema,
   ProviderNameSchema,
@@ -117,8 +117,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     switch (name) {
       // -----------------------------------------------------------------------
       case TOOL_LIST_PACTICIPANTS.name: {
-        const input = BrokerUrlSchema.parse(args);
-        const config = buildConfig(input);
+        EmptySchema.parse(args);
+        const config = buildConfig();
         const pacticipants = await listPacticipants(config);
         return {
           content: [
@@ -143,8 +143,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       // -----------------------------------------------------------------------
       case TOOL_LIST_PROVIDERS.name: {
-        const input = BrokerUrlSchema.parse(args);
-        const config = buildConfig(input);
+        EmptySchema.parse(args);
+        const config = buildConfig();
         const providers = await listProviders(config);
         return {
           content: [
@@ -168,7 +168,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       // -----------------------------------------------------------------------
       case TOOL_GET_PACTICIPANT.name: {
         const input = PacticipantNameSchema.parse(args);
-        const config = buildConfig(input);
+        const config = buildConfig();
         const pacticipant = await getPacticipant(config, input.name);
         return {
           content: [
@@ -195,7 +195,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       // -----------------------------------------------------------------------
       case TOOL_GET_PROVIDER_STATES.name: {
         const input = ProviderNameSchema.parse(args);
-        const config = buildConfig(input);
+        const config = buildConfig();
         const statesWithConsumer = await getProviderStates(
           config,
           input.provider_name,
@@ -225,7 +225,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       // -----------------------------------------------------------------------
       case TOOL_GET_PROVIDER_PACTS.name: {
         const input = ProviderNameSchema.parse(args);
-        const config = buildConfig(input);
+        const config = buildConfig();
         const pacts = await getProviderPacts(config, input.provider_name);
         return {
           content: [
@@ -249,7 +249,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       // -----------------------------------------------------------------------
       case TOOL_GET_CONSUMER_PACTS.name: {
         const input = ConsumerNameSchema.parse(args);
-        const config = buildConfig(input);
+        const config = buildConfig();
         const pacts = await getConsumerPacts(config, input.consumer_name);
         return {
           content: [
@@ -273,7 +273,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       // -----------------------------------------------------------------------
       case TOOL_GET_PACT.name: {
         const input = PactPairSchema.parse(args);
-        const config = buildConfig(input);
+        const config = buildConfig();
         const pact = await getPact(
           config,
           input.consumer_name,
@@ -320,15 +320,26 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function buildConfig(input: {
-  broker_url: string;
-  auth_token?: string;
-  bearer_token?: string;
-}): PactBrokerConfig {
+function buildConfig(): PactBrokerConfig {
+  const brokerUrl = process.env.PACT_BROKER_BASE_URL;
+  if (!brokerUrl) {
+    throw new Error("PACT_BROKER_BASE_URL environment variable is required");
+  }
+
+  const username = process.env.PACT_BROKER_USERNAME;
+  const password = process.env.PACT_BROKER_PASSWORD;
+  const bearerToken = process.env.PACT_BROKER_TOKEN;
+
+  let authToken: string | undefined;
+  if (username && password) {
+    // Create base64 encoded basic auth token
+    authToken = Buffer.from(`${username}:${password}`).toString("base64");
+  }
+
   return {
-    brokerUrl: input.broker_url.replace(/\/$/, ""), // strip trailing slash
-    authToken: input.auth_token,
-    bearerToken: input.bearer_token,
+    brokerUrl: brokerUrl.replace(/\/$/, ""), // strip trailing slash
+    authToken,
+    bearerToken,
   };
 }
 
@@ -338,7 +349,7 @@ function buildConfig(input: {
  * but we keep dependencies minimal.
  */
 function zodToJsonSchema(
-  schema: ReturnType<typeof BrokerUrlSchema.extend> | typeof BrokerUrlSchema,
+  schema: ReturnType<typeof EmptySchema.extend> | typeof EmptySchema,
 ): object {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const shape = (schema as any)._def?.shape?.() ?? {};
