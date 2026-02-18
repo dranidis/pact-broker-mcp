@@ -340,6 +340,39 @@ export async function getPact(
 }
 
 /**
+ * Fetch the previous distinct pact for a pact identified by either consumer version or pact version UUID.
+ * Returns null if no previous distinct pact exists.
+ */
+export async function getPreviousDistinctPact(
+  config: PactBrokerConfig,
+  consumerName: string,
+  providerName: string,
+  consumerVersion: string,
+): Promise<Pact | null> {
+  const url = `${config.brokerUrl}/pacts/provider/${encodeURIComponent(
+    providerName,
+  )}/consumer/${encodeURIComponent(consumerName)}/version/${encodeURIComponent(
+    consumerVersion,
+  )}/previous-distinct`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: buildHeaders(config),
+  });
+
+  if (response.status === 404) return null;
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(
+      `Pact Broker request failed: ${response.status} ${response.statusText}${body ? ` — ${body}` : ""}`,
+    );
+  }
+
+  return response.json() as Promise<Pact>;
+}
+
+/**
  * Check if a pacticipant version can be deployed to an environment.
  * Uses the matrix API to determine deployment safety based on verification results.
  */

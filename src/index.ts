@@ -27,6 +27,7 @@ import {
   getConsumerPacts,
   getPact,
   getPacticipant,
+  getPreviousDistinctPact,
   getProviderPacts,
   getProviderStates,
   listEnvironments,
@@ -40,6 +41,7 @@ import {
   CanIDeploySchema,
   ConsumerNameSchema,
   EmptySchema,
+  PreviousDistinctPactSchema,
   PacticipantNameSchema,
   PactPairSchema,
   ProviderNameSchema,
@@ -49,6 +51,7 @@ import {
   TOOL_GET_CONSUMER_PACTS,
   TOOL_GET_PACT,
   TOOL_GET_PACTICIPANT,
+  TOOL_GET_PREVIOUS_DISTINCT_PACT,
   TOOL_GET_PROVIDER_PACTS,
   TOOL_GET_PROVIDER_STATES,
   TOOL_LIST_ENVIRONMENTS,
@@ -115,6 +118,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       name: TOOL_GET_PACT.name,
       description: TOOL_GET_PACT.description,
       inputSchema: zodToJsonSchema(TOOL_GET_PACT.schema),
+    },
+    {
+      name: TOOL_GET_PREVIOUS_DISTINCT_PACT.name,
+      description: TOOL_GET_PREVIOUS_DISTINCT_PACT.description,
+      inputSchema: zodToJsonSchema(TOOL_GET_PREVIOUS_DISTINCT_PACT.schema),
     },
     {
       name: TOOL_CAN_I_DEPLOY.name,
@@ -323,6 +331,28 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       // -----------------------------------------------------------------------
+      case TOOL_GET_PREVIOUS_DISTINCT_PACT.name: {
+        const input = PreviousDistinctPactSchema.parse(args);
+        const config = buildConfig();
+
+        const previous = await getPreviousDistinctPact(
+          config,
+          input.consumer_name,
+          input.provider_name,
+          input.consumer_version,
+        );
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(previous, null, 2),
+            },
+          ],
+        };
+      }
+
+      // -----------------------------------------------------------------------
       case TOOL_CAN_I_DEPLOY.name: {
         const input = CanIDeploySchema.parse(args);
         const config = buildConfig();
@@ -485,10 +515,19 @@ function buildConfig(): PactBrokerConfig {
  * but we keep dependencies minimal.
  */
 function zodToJsonSchema(
-  schema: ReturnType<typeof EmptySchema.extend> | typeof EmptySchema,
-): object {
+  // We intentionally accept any Zod schema here (including ZodEffects from refine()).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const shape = (schema as any)._def?.shape?.() ?? {};
+  schema: any,
+): object {
+  // Unwrap ZodEffects (eg, schemas using refine()) to access the underlying object shape.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let current: any = schema;
+  while (current?._def?.typeName === "ZodEffects") {
+    current = current._def.schema;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const shape = current?._def?.shape?.() ?? {};
   const properties: Record<string, object> = {};
   const required: string[] = [];
 

@@ -28,6 +28,17 @@ export const PactPairSchema = z.object({
   provider_name: z.string().describe("Name of the provider pacticipant"),
 });
 
+export const PreviousDistinctPactSchema = z.object({
+  consumer_name: z.string().describe("Name of the consumer pacticipant"),
+  provider_name: z.string().describe("Name of the provider pacticipant"),
+  consumer_version: z
+    .string()
+    .describe(
+      "Consumer version number for the pact (e.g., '1.2.3'). Used to locate the pact version.",
+    ),
+});
+
+
 export const CanIDeploySchema = z.object({
   pacticipant: z.string().describe("Name of the pacticipant to deploy"),
   version: z.string().describe("Version number or tag of the pacticipant"),
@@ -92,6 +103,13 @@ export const TOOL_GET_PACT = {
   description:
     "Fetch the full latest pact JSON between a specific consumer and provider, including all interactions.",
   schema: PactPairSchema,
+} as const;
+
+export const TOOL_GET_PREVIOUS_DISTINCT_PACT = {
+  name: "get_previous_distinct_pact",
+  description:
+    "Fetch the previous distinct pact for a provider/consumer at a given consumer version. Returns the full pact JSON for the previous distinct pact, or null if there isn't one.",
+  schema: PreviousDistinctPactSchema,
 } as const;
 
 export const TOOL_CAN_I_DEPLOY = {
