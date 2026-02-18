@@ -19,6 +19,7 @@ Exposes Pact Broker data â€” providers, consumers, pacts, and provider states â€
 | `get_pact` | Fetch the full pact JSON for a consumer/provider pair |
 | `can_i_deploy` | Check if a pacticipant version can be safely deployed to an environment |
 | `list_environments` | List all environments registered in the Pact Broker |
+| `get_branches` | Get all branches for a specific pacticipant |
 
 ---
 
@@ -128,6 +129,8 @@ Once connected, you can ask Claude things like:
 > "Is it safe to deploy the OrderConsumer version abc123 to staging?"
 
 > "What environments are available in the Pact Broker?"
+
+> "Show me all branches for the PaymentService"
 
 ---
 

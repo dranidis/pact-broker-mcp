@@ -150,6 +150,21 @@ export interface EnvironmentsResponse {
   environments: Environment[];
 }
 
+export interface Branch {
+  name: string;
+  pacticipant?: { name: string };
+  createdAt?: string;
+  updatedAt?: string;
+  _links?: {
+    self: { href: string };
+    [key: string]: unknown;
+  };
+}
+
+export interface BranchesResponse {
+  branches: Branch[];
+}
+
 // ---------------------------------------------------------------------------
 // HTTP helper
 // ---------------------------------------------------------------------------
@@ -342,6 +357,20 @@ export async function listEnvironments(
     config,
   );
   return data._embedded?.environments ?? [];
+}
+
+/**
+ * Get all branches for a specific pacticipant.
+ */
+export async function getBranches(
+  config: PactBrokerConfig,
+  pacticipantName: string,
+): Promise<Branch[]> {
+  const url = `${config.brokerUrl}/pacticipants/${encodeURIComponent(
+    pacticipantName,
+  )}/branches`;
+  const data = await fetchJSON<{ _embedded: BranchesResponse }>(url, config);
+  return data._embedded?.branches ?? [];
 }
 
 // ---------------------------------------------------------------------------

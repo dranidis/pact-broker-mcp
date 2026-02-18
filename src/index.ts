@@ -22,6 +22,7 @@ import { ZodError } from "zod";
 
 import {
   canIDeploy,
+  getBranches,
   getConsumerPacts,
   getPact,
   getPacticipant,
@@ -41,6 +42,7 @@ import {
   PactPairSchema,
   ProviderNameSchema,
   TOOL_CAN_I_DEPLOY,
+  TOOL_GET_BRANCHES,
   TOOL_GET_CONSUMER_PACTS,
   TOOL_GET_PACT,
   TOOL_GET_PACTICIPANT,
@@ -117,6 +119,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       name: TOOL_LIST_ENVIRONMENTS.name,
       description: TOOL_LIST_ENVIRONMENTS.description,
       inputSchema: zodToJsonSchema(TOOL_LIST_ENVIRONMENTS.schema),
+    },
+    {
+      name: TOOL_GET_BRANCHES.name,
+      description: TOOL_GET_BRANCHES.description,
+      inputSchema: zodToJsonSchema(TOOL_GET_BRANCHES.schema),
     },
   ],
 }));
@@ -347,6 +354,29 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                   production: e.production,
                   uuid: e.uuid,
                   createdAt: e.createdAt,
+                })),
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      }
+
+      // -----------------------------------------------------------------------
+      case TOOL_GET_BRANCHES.name: {
+        const input = PacticipantNameSchema.parse(args);
+        const config = buildConfig();
+        const branches = await getBranches(config, input.name);
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                branches.map((b) => ({
+                  name: b.name,
+                  createdAt: b.createdAt,
+                  updatedAt: b.updatedAt,
                 })),
                 null,
                 2,

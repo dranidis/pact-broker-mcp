@@ -102,3 +102,10 @@ export const TOOL_LIST_ENVIRONMENTS = {
     "List all environments registered in the Pact Broker where pacticipants can be deployed.",
   schema: EmptySchema,
 } as const;
+
+export const TOOL_GET_BRANCHES = {
+  name: "get_branches",
+  description:
+    "Get all branches for a specific pacticipant. Branches are used for versioning and tracking different development streams.",
+  schema: PacticipantNameSchema,
+} as const;
