@@ -27,6 +27,7 @@ import {
   getPacticipant,
   getProviderPacts,
   getProviderStates,
+  listEnvironments,
   listPacticipants,
   listProviders,
   type PactBrokerConfig,
@@ -45,6 +46,7 @@ import {
   TOOL_GET_PACTICIPANT,
   TOOL_GET_PROVIDER_PACTS,
   TOOL_GET_PROVIDER_STATES,
+  TOOL_LIST_ENVIRONMENTS,
   TOOL_LIST_PACTICIPANTS,
   TOOL_LIST_PROVIDERS,
 } from "./tools.js";
@@ -110,6 +112,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       name: TOOL_CAN_I_DEPLOY.name,
       description: TOOL_CAN_I_DEPLOY.description,
       inputSchema: zodToJsonSchema(TOOL_CAN_I_DEPLOY.schema),
+    },
+    {
+      name: TOOL_LIST_ENVIRONMENTS.name,
+      description: TOOL_LIST_ENVIRONMENTS.description,
+      inputSchema: zodToJsonSchema(TOOL_LIST_ENVIRONMENTS.schema),
     },
   ],
 }));
@@ -319,6 +326,31 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               text:
                 `${emoji} ${status}\n\n${result.summary.reason}\n\n` +
                 JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+
+      // -----------------------------------------------------------------------
+      case TOOL_LIST_ENVIRONMENTS.name: {
+        EmptySchema.parse(args);
+        const config = buildConfig();
+        const environments = await listEnvironments(config);
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                environments.map((e) => ({
+                  name: e.name,
+                  displayName: e.displayName,
+                  production: e.production,
+                  uuid: e.uuid,
+                  createdAt: e.createdAt,
+                })),
+                null,
+                2,
+              ),
             },
           ],
         };

@@ -95,3 +95,10 @@ export const TOOL_CAN_I_DEPLOY = {
     "Check if a pacticipant version can be safely deployed to an environment. Returns deployment status based on verification results.",
   schema: CanIDeploySchema,
 } as const;
+
+export const TOOL_LIST_ENVIRONMENTS = {
+  name: "list_environments",
+  description:
+    "List all environments registered in the Pact Broker where pacticipants can be deployed.",
+  schema: EmptySchema,
+} as const;

@@ -127,6 +127,29 @@ export interface CanIDeployResponse {
   }>;
 }
 
+export interface Environment {
+  uuid: string;
+  name: string;
+  displayName?: string;
+  production?: boolean;
+  contacts?: Array<{
+    name: string;
+    details: {
+      emailAddress?: string;
+    };
+  }>;
+  createdAt?: string;
+  updatedAt?: string;
+  _links?: {
+    self: { href: string };
+    [key: string]: unknown;
+  };
+}
+
+export interface EnvironmentsResponse {
+  environments: Environment[];
+}
+
 // ---------------------------------------------------------------------------
 // HTTP helper
 // ---------------------------------------------------------------------------
@@ -305,6 +328,20 @@ export async function canIDeploy(
   url.searchParams.append("latestby", "cvp");
 
   return fetchJSON<CanIDeployResponse>(url.toString(), config);
+}
+
+/**
+ * List all environments registered in the Pact Broker.
+ */
+export async function listEnvironments(
+  config: PactBrokerConfig,
+): Promise<Environment[]> {
+  const url = `${config.brokerUrl}/environments`;
+  const data = await fetchJSON<{ _embedded: EnvironmentsResponse }>(
+    url,
+    config,
+  );
+  return data._embedded?.environments ?? [];
 }
 
 // ---------------------------------------------------------------------------
