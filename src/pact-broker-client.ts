@@ -229,6 +229,12 @@ function extractPactVersionUuid(href: string): string | undefined {
   return match?.[1];
 }
 
+function parseDateMs(value: unknown): number | undefined {
+  if (typeof value !== "string") return undefined;
+  const ms = Date.parse(value);
+  return Number.isFinite(ms) ? ms : undefined;
+}
+
 // ---------------------------------------------------------------------------
 // Public API methods
 // ---------------------------------------------------------------------------
@@ -402,6 +408,95 @@ export async function getPactVersion(
     pactVersionUrl: pactVersionHref,
     pactUrl: pactHref,
   };
+}
+
+/**
+ * Get the latest verification result(s) for a pact-version UUID.
+ * Returns null if there are no verification results (404).
+ */
+export async function getLatestVerificationResultsForPactVersion(
+  config: PactBrokerConfig,
+  consumerName: string,
+  providerName: string,
+  pactVersion: string,
+): Promise<unknown | null> {
+  const base = `${config.brokerUrl}/pacts/provider/${encodeURIComponent(
+    providerName,
+  )}/consumer/${encodeURIComponent(
+    consumerName,
+  )}/pact-version/${encodeURIComponent(pactVersion)}`;
+
+  const candidates = [`${base}/verification-results/latest`, `${base}/verification-results`];
+
+  for (const url of candidates) {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: buildHeaders(config),
+    });
+
+    if (response.status === 404) continue;
+
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      throw new Error(
+        `Pact Broker request failed: ${response.status} ${response.statusText}${body ? ` — ${body}` : ""}`,
+      );
+    }
+
+    const json = (await response.json().catch(() => null)) as unknown;
+    if (!json) return null;
+
+    // If this is the list endpoint, try to derive the latest.
+    if (url.endsWith("/verification-results")) {
+      if (typeof json === "object" && json !== null) {
+        const links = (json as { _links?: Record<string, unknown> })._links;
+        const latestHref = firstHref(
+          links?.["pb:latest-verification-results"] ??
+            links?.["pb:latest-verification-result"] ??
+            links?.["latest-verification-results"] ??
+            links?.["latest-verification-result"],
+        );
+
+        if (latestHref) {
+          return fetchJSON<unknown>(new URL(latestHref, config.brokerUrl).toString(), config);
+        }
+
+        const embedded = (json as { _embedded?: unknown })._embedded;
+        const results =
+          typeof embedded === "object" && embedded !== null
+            ? (embedded as { verificationResults?: unknown }).verificationResults
+            : undefined;
+
+        if (Array.isArray(results) && results.length > 0) {
+          // Pick the newest by publishedAt/verifiedAt/createdAt when available.
+          const sorted = [...results].sort((a, b) => {
+            const aObj = typeof a === "object" && a !== null ? (a as Record<string, unknown>) : {};
+            const bObj = typeof b === "object" && b !== null ? (b as Record<string, unknown>) : {};
+
+            const aMs =
+              parseDateMs(aObj.publishedAt) ??
+              parseDateMs(aObj.verifiedAt) ??
+              parseDateMs(aObj.createdAt) ??
+              0;
+            const bMs =
+              parseDateMs(bObj.publishedAt) ??
+              parseDateMs(bObj.verifiedAt) ??
+              parseDateMs(bObj.createdAt) ??
+              0;
+
+            return bMs - aMs;
+          });
+
+          return sorted[0];
+        }
+      }
+    }
+
+    // For /latest endpoint, return as-is.
+    return json;
+  }
+
+  return null;
 }
 
 /**

@@ -48,6 +48,16 @@ export const PactVersionSchema = z.object({
     ),
 });
 
+export const PactVersionIdSchema = z.object({
+  consumer_name: z.string().describe("Name of the consumer pacticipant"),
+  provider_name: z.string().describe("Name of the provider pacticipant"),
+  pact_version: z
+    .string()
+    .describe(
+      "Pact Broker pact-version UUID identifying the specific pact content.",
+    ),
+});
+
 export const CanIDeploySchema = z.object({
   pacticipant: z.string().describe("Name of the pacticipant to deploy"),
   version: z.string().describe("Version number or tag of the pacticipant"),
@@ -126,6 +136,13 @@ export const TOOL_GET_PACT_VERSION = {
   description:
     "Get the Pact Broker pact-version UUID for a pact identified by provider, consumer, and consumer version.",
   schema: PactVersionSchema,
+} as const;
+
+export const TOOL_GET_LATEST_VERIFICATION_RESULTS_FOR_PACT_VERSION = {
+  name: "get_latest_verification_results_for_pact_version",
+  description:
+    "Get the latest verification result(s) for a pact-version UUID for a given provider/consumer pair. Returns null if no verification results exist.",
+  schema: PactVersionIdSchema,
 } as const;
 
 export const TOOL_CAN_I_DEPLOY = {
