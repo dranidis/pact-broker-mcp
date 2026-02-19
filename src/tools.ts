@@ -23,32 +23,22 @@ export const PacticipantNameSchema = z.object({
   name: z.string().describe("Name of the pacticipant"),
 });
 
-export const PactPairSchema = z.object({
+export const ConsumerProviderNamesSchema = z.object({
   consumer_name: z.string().describe("Name of the consumer pacticipant"),
   provider_name: z.string().describe("Name of the provider pacticipant"),
 });
 
-export const PreviousDistinctPactSchema = z.object({
-  consumer_name: z.string().describe("Name of the consumer pacticipant"),
-  provider_name: z.string().describe("Name of the provider pacticipant"),
-  consumer_version: z
-    .string()
-    .describe(
-      "Consumer version number for the pact (e.g., '1.2.3'). Used to locate the pact version.",
-    ),
-});
-
-export const PactVersionSchema = z.object({
+export const ConsumerProviderConsumerVersionSchema = z.object({
   consumer_name: z.string().describe("Name of the consumer pacticipant"),
   provider_name: z.string().describe("Name of the provider pacticipant"),
   consumer_version: z
     .string()
     .describe(
-      "Consumer version number for the pact (e.g., '1.2.3') used to look up the pact and its pact-version UUID.",
+      "Consumer version number uniquely identifying the consumer version. For git, this could be a commit SHA or a tag.",
     ),
 });
 
-export const PactVersionIdSchema = z.object({
+export const ConsumerProviderPactVersionSchema = z.object({
   consumer_name: z.string().describe("Name of the consumer pacticipant"),
   provider_name: z.string().describe("Name of the provider pacticipant"),
   pact_version: z
@@ -66,7 +56,7 @@ export const CanIDeploySchema = z.object({
     .describe("Target environment name (e.g., 'production', 'staging')"),
 });
 
-export const BranchVersionSchema = z.object({
+export const PacticipantBranchSchema = z.object({
   pacticipant: z.string().describe("Name of the pacticipant"),
   branch: z.string().describe("Name of the branch"),
 });
@@ -85,7 +75,7 @@ export const TOOL_LIST_PACTICIPANTS = {
 export const TOOL_LIST_PROVIDERS = {
   name: "list_providers",
   description:
-    "List all providers registered in the Pact Broker — i.e. pacticipants that appear as the provider in at least one pact.",
+    "List all providers registered in the Pact Broker — i.e. pacticipants that appear as the provider in at least one of the latest pacts.",
   schema: EmptySchema,
 } as const;
 
@@ -121,28 +111,28 @@ export const TOOL_GET_PACT = {
   name: "get_pact",
   description:
     "Fetch the full latest pact JSON between a specific consumer and provider, including all interactions.",
-  schema: PactPairSchema,
+  schema: ConsumerProviderNamesSchema,
 } as const;
 
 export const TOOL_GET_PREVIOUS_DISTINCT_PACT = {
   name: "get_previous_distinct_pact",
   description:
     "Fetch the previous distinct pact for a provider/consumer at a given consumer version. Returns the full pact JSON for the previous distinct pact, or null if there isn't one.",
-  schema: PreviousDistinctPactSchema,
+  schema: ConsumerProviderConsumerVersionSchema,
 } as const;
 
 export const TOOL_GET_PACT_VERSION = {
   name: "get_pact_version",
   description:
-    "Get the Pact Broker pact-version UUID for a pact identified by provider, consumer, and consumer version.",
-  schema: PactVersionSchema,
+    "Get the Pact Broker pact-version UUID for a pact identified by provider, consumer, and consumer version. A specific pact can belong to multiple consumer versions if the pact  content hasn't changed between versions. The pact-version UUID that can be used to fetch verification results.",
+  schema: ConsumerProviderConsumerVersionSchema,
 } as const;
 
 export const TOOL_GET_LATEST_VERIFICATION_RESULTS_FOR_PACT_VERSION = {
   name: "get_latest_verification_results_for_pact_version",
   description:
     "Get the latest verification result(s) for a pact-version UUID for a given provider/consumer pair. Returns null if no verification results exist.",
-  schema: PactVersionIdSchema,
+  schema: ConsumerProviderPactVersionSchema,
 } as const;
 
 export const TOOL_CAN_I_DEPLOY = {
@@ -159,15 +149,15 @@ export const TOOL_LIST_ENVIRONMENTS = {
   schema: EmptySchema,
 } as const;
 
-export const TOOL_GET_BRANCHES = {
-  name: "get_branches",
+export const TOOL_GET_PACTICIPANT_BRANCHES = {
+  name: "get_pacticipant_branches",
   description:
     "Get all branches for a specific pacticipant. Branches are used for versioning and tracking different development streams.",
   schema: PacticipantNameSchema,
 } as const;
 
-export const TOOL_GET_BRANCH_VERSION = {
-  name: "get_branch_version",
+export const TOOL_GET_PACTICIPANT_BRANCH_LATEST_VERSION = {
+  name: "get_pacticipant_branch_latest_version",
   description: "Get the latest version for a specific branch of a pacticipant.",
-  schema: BranchVersionSchema,
+  schema: PacticipantBranchSchema,
 } as const;

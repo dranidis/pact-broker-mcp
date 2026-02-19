@@ -23,14 +23,14 @@ import { ZodError } from "zod";
 import {
   canIDeploy,
   getBranches,
-  getBranchLatestVersion,
-  getConsumerPacts,
-  getPact,
+  getPacticipantBranchLatestVersion,
+  getConsumerLatestPacts,
+  getLatestPact,
   getPacticipant,
   getPactVersion,
   getLatestVerificationResultsForPactVersion,
   getPreviousDistinctPact,
-  getProviderPacts,
+  getProviderLatestPacts,
   getProviderStates,
   listEnvironments,
   listPacticipants,
@@ -39,19 +39,18 @@ import {
 } from "./pact-broker-client.js";
 
 import {
-  BranchVersionSchema,
+  PacticipantBranchSchema,
   CanIDeploySchema,
   ConsumerNameSchema,
   EmptySchema,
-  PactVersionIdSchema,
-  PactVersionSchema,
-  PreviousDistinctPactSchema,
+  ConsumerProviderPactVersionSchema,
+  ConsumerProviderConsumerVersionSchema,
   PacticipantNameSchema,
-  PactPairSchema,
+  ConsumerProviderNamesSchema,
   ProviderNameSchema,
   TOOL_CAN_I_DEPLOY,
-  TOOL_GET_BRANCHES,
-  TOOL_GET_BRANCH_VERSION,
+  TOOL_GET_PACTICIPANT_BRANCHES,
+  TOOL_GET_PACTICIPANT_BRANCH_LATEST_VERSION,
   TOOL_GET_CONSUMER_PACTS,
   TOOL_GET_PACT,
   TOOL_GET_PACTICIPANT,
@@ -154,14 +153,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: zodToJsonSchema(TOOL_LIST_ENVIRONMENTS.schema),
     },
     {
-      name: TOOL_GET_BRANCHES.name,
-      description: TOOL_GET_BRANCHES.description,
-      inputSchema: zodToJsonSchema(TOOL_GET_BRANCHES.schema),
+      name: TOOL_GET_PACTICIPANT_BRANCHES.name,
+      description: TOOL_GET_PACTICIPANT_BRANCHES.description,
+      inputSchema: zodToJsonSchema(TOOL_GET_PACTICIPANT_BRANCHES.schema),
     },
     {
-      name: TOOL_GET_BRANCH_VERSION.name,
-      description: TOOL_GET_BRANCH_VERSION.description,
-      inputSchema: zodToJsonSchema(TOOL_GET_BRANCH_VERSION.schema),
+      name: TOOL_GET_PACTICIPANT_BRANCH_LATEST_VERSION.name,
+      description: TOOL_GET_PACTICIPANT_BRANCH_LATEST_VERSION.description,
+      inputSchema: zodToJsonSchema(
+        TOOL_GET_PACTICIPANT_BRANCH_LATEST_VERSION.schema,
+      ),
     },
   ],
 }));
@@ -286,7 +287,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case TOOL_GET_PROVIDER_PACTS.name: {
         const input = ProviderNameSchema.parse(args);
         const config = buildConfig();
-        const pacts = await getProviderPacts(config, input.provider_name);
+        const pacts = await getProviderLatestPacts(config, input.provider_name);
         return {
           content: [
             {
@@ -310,7 +311,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case TOOL_GET_CONSUMER_PACTS.name: {
         const input = ConsumerNameSchema.parse(args);
         const config = buildConfig();
-        const pacts = await getConsumerPacts(config, input.consumer_name);
+        const pacts = await getConsumerLatestPacts(config, input.consumer_name);
         return {
           content: [
             {
@@ -332,9 +333,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       // -----------------------------------------------------------------------
       case TOOL_GET_PACT.name: {
-        const input = PactPairSchema.parse(args);
+        const input = ConsumerProviderNamesSchema.parse(args);
         const config = buildConfig();
-        const pact = await getPact(
+        const pact = await getLatestPact(
           config,
           input.consumer_name,
           input.provider_name,
@@ -351,7 +352,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       // -----------------------------------------------------------------------
       case TOOL_GET_PACT_VERSION.name: {
-        const input = PactVersionSchema.parse(args);
+        const input = ConsumerProviderConsumerVersionSchema.parse(args);
         const config = buildConfig();
         const result = await getPactVersion(
           config,
@@ -372,7 +373,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       // -----------------------------------------------------------------------
       case TOOL_GET_LATEST_VERIFICATION_RESULTS_FOR_PACT_VERSION.name: {
-        const input = PactVersionIdSchema.parse(args);
+        const input = ConsumerProviderPactVersionSchema.parse(args);
         const config = buildConfig();
 
         const result = await getLatestVerificationResultsForPactVersion(
@@ -394,7 +395,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       // -----------------------------------------------------------------------
       case TOOL_GET_PREVIOUS_DISTINCT_PACT.name: {
-        const input = PreviousDistinctPactSchema.parse(args);
+        const input = ConsumerProviderConsumerVersionSchema.parse(args);
         const config = buildConfig();
 
         const previous = await getPreviousDistinctPact(
@@ -467,7 +468,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       // -----------------------------------------------------------------------
-      case TOOL_GET_BRANCHES.name: {
+      case TOOL_GET_PACTICIPANT_BRANCHES.name: {
         const input = PacticipantNameSchema.parse(args);
         const config = buildConfig();
         const branches = await getBranches(config, input.name);
@@ -490,10 +491,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       // -----------------------------------------------------------------------
-      case TOOL_GET_BRANCH_VERSION.name: {
-        const input = BranchVersionSchema.parse(args);
+      case TOOL_GET_PACTICIPANT_BRANCH_LATEST_VERSION.name: {
+        const input = PacticipantBranchSchema.parse(args);
         const config = buildConfig();
-        const version = await getBranchLatestVersion(
+        const version = await getPacticipantBranchLatestVersion(
           config,
           input.pacticipant,
           input.branch,
