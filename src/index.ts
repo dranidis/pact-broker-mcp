@@ -18,7 +18,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { ZodError } from "zod";
+import * as z from "zod";
 
 import {
   canIDeploy,
@@ -532,8 +532,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
   } catch (err) {
     const message =
-      err instanceof ZodError
-        ? `Invalid arguments: ${err.errors.map((e) => `${e.path.join(".")}: ${e.message}`).join(", ")}`
+      err instanceof z.ZodError
+        ? `Invalid arguments: ${err.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join(", ")}`
         : err instanceof Error
           ? err.message
           : String(err);
@@ -573,64 +573,16 @@ function buildConfig(): PactBrokerConfig {
 }
 
 /**
- * Minimal Zod → JSON Schema converter (handles the subset we use here).
- * For a full implementation you would use `zod-to-json-schema` package,
- * but we keep dependencies minimal.
+ * Zod → JSON Schema converter.
+ *
+ * Zod v4 includes a native `z.toJSONSchema()` implementation, which avoids
+ * relying on Zod internal types/fields (which changed between v3 and v4).
  */
-function zodToJsonSchema(
-  // We intentionally accept any Zod schema here (including ZodEffects from refine()).
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  schema: any,
-): object {
-  // Unwrap ZodEffects (eg, schemas using refine()) to access the underlying object shape.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let current: any = schema;
-  while (current?._def?.typeName === "ZodEffects") {
-    current = current._def.schema;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const shape = current?._def?.shape?.() ?? {};
-  const properties: Record<string, object> = {};
-  const required: string[] = [];
-
-  for (const [key, value] of Object.entries(shape)) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const v = value as any;
-    const typeName = v._def?.typeName;
-    const description = v._def?.description ?? v.description;
-
-    const isOptional =
-      typeName === "ZodOptional" ||
-      v._def?.innerType?._def?.typeName === "ZodOptional";
-
-    const innerTypeName =
-      typeName === "ZodOptional" ? v._def?.innerType?._def?.typeName : typeName;
-
-    const jsonType =
-      innerTypeName === "ZodString"
-        ? "string"
-        : innerTypeName === "ZodNumber"
-          ? "number"
-          : innerTypeName === "ZodBoolean"
-            ? "boolean"
-            : "string";
-
-    properties[key] = {
-      type: jsonType,
-      ...(description ? { description } : {}),
-    };
-
-    if (!isOptional) {
-      required.push(key);
-    }
-  }
-
-  return {
-    type: "object",
-    properties,
-    required,
-  };
+function zodToJsonSchema(schema: z.ZodType): object {
+  return z.toJSONSchema(schema, {
+    target: "draft-07",
+    unrepresentable: "any",
+  });
 }
 
 // ---------------------------------------------------------------------------
