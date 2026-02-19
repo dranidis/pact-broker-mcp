@@ -23,6 +23,8 @@ import * as z from "zod";
 import {
   canIDeploy,
   getBranches,
+  getCurrentlyDeployedVersions,
+  getCurrentlySupportedVersions,
   getPacticipantBranchLatestVersion,
   getConsumerLatestPacts,
   getLatestPact,
@@ -42,6 +44,7 @@ import {
   PacticipantBranchSchema,
   CanIDeploySchema,
   ConsumerNameSchema,
+  EnvironmentSchema,
   EmptySchema,
   ConsumerProviderPactVersionSchema,
   ConsumerProviderConsumerVersionSchema,
@@ -51,6 +54,8 @@ import {
   TOOL_CAN_I_DEPLOY,
   TOOL_GET_PACTICIPANT_BRANCHES,
   TOOL_GET_PACTICIPANT_BRANCH_LATEST_VERSION,
+  TOOL_GET_CURRENTLY_DEPLOYED_VERSIONS,
+  TOOL_GET_CURRENTLY_SUPPORTED_VERSIONS,
   TOOL_GET_CONSUMER_PACTS,
   TOOL_GET_PACT,
   TOOL_GET_PACTICIPANT,
@@ -162,6 +167,18 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       description: TOOL_GET_PACTICIPANT_BRANCH_LATEST_VERSION.description,
       inputSchema: zodToJsonSchema(
         TOOL_GET_PACTICIPANT_BRANCH_LATEST_VERSION.schema,
+      ),
+    },
+    {
+      name: TOOL_GET_CURRENTLY_DEPLOYED_VERSIONS.name,
+      description: TOOL_GET_CURRENTLY_DEPLOYED_VERSIONS.description,
+      inputSchema: zodToJsonSchema(TOOL_GET_CURRENTLY_DEPLOYED_VERSIONS.schema),
+    },
+    {
+      name: TOOL_GET_CURRENTLY_SUPPORTED_VERSIONS.name,
+      description: TOOL_GET_CURRENTLY_SUPPORTED_VERSIONS.description,
+      inputSchema: zodToJsonSchema(
+        TOOL_GET_CURRENTLY_SUPPORTED_VERSIONS.schema,
       ),
     },
   ],
@@ -518,6 +535,81 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
 
+      // -----------------------------------------------------------------------
+      case TOOL_GET_CURRENTLY_DEPLOYED_VERSIONS.name: {
+        const input = EnvironmentSchema.parse(args);
+        const config = buildConfig();
+
+        const result = await getCurrentlyDeployedVersions(
+          config,
+          input.environment,
+        );
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                {
+                  environment: {
+                    uuid: result.environment.uuid,
+                    name: result.environment.name,
+                    displayName: result.environment.displayName,
+                    production: result.environment.production,
+                  },
+                  deployedVersions: result.deployedVersions.map((dv) => ({
+                    uuid: dv.uuid,
+                    currentlyDeployed: dv.currentlyDeployed,
+                    createdAt: dv.createdAt,
+                    pacticipant: dv._embedded?.pacticipant?.name,
+                    version: dv._embedded?.version?.number,
+                  })),
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      }
+
+      // -----------------------------------------------------------------------
+      case TOOL_GET_CURRENTLY_SUPPORTED_VERSIONS.name: {
+        const input = EnvironmentSchema.parse(args);
+        const config = buildConfig();
+
+        const result = await getCurrentlySupportedVersions(
+          config,
+          input.environment,
+        );
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                {
+                  environment: {
+                    uuid: result.environment.uuid,
+                    name: result.environment.name,
+                    displayName: result.environment.displayName,
+                    production: result.environment.production,
+                  },
+                  releasedVersions: result.releasedVersions.map((rv) => ({
+                    uuid: rv.uuid,
+                    currentlySupported: rv.currentlySupported,
+                    createdAt: rv.createdAt,
+                    pacticipant: rv._embedded?.pacticipant?.name,
+                    version: rv._embedded?.version?.number,
+                  })),
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      }
       // -----------------------------------------------------------------------
       default:
         return {

@@ -179,6 +179,78 @@ export interface BranchVersion {
   };
 }
 
+export interface DeployedVersion {
+  uuid: string;
+  currentlyDeployed: boolean;
+  createdAt?: string;
+  _embedded: {
+    pacticipant: {
+      name: string;
+      _links?: {
+        self?: { href: string };
+        [key: string]: unknown;
+      };
+    };
+    version: {
+      number: string;
+      _links?: {
+        self?: { href: string; title?: string; name?: string };
+        [key: string]: unknown;
+      };
+    };
+  };
+  _links?: {
+    self?: { href: string };
+    [key: string]: unknown;
+  };
+}
+
+export interface CurrentlyDeployedVersionsResponse {
+  _embedded?: {
+    deployedVersions?: DeployedVersion[];
+  };
+  _links?: {
+    self?: { href: string; title?: string };
+    [key: string]: unknown;
+  };
+}
+
+export interface ReleasedVersion {
+  uuid: string;
+  currentlySupported: boolean;
+  createdAt?: string;
+  _embedded: {
+    pacticipant: {
+      name: string;
+      _links?: {
+        self?: { href: string };
+        [key: string]: unknown;
+      };
+    };
+    version: {
+      number: string;
+      _links?: {
+        self?: { href: string; title?: string; name?: string };
+        [key: string]: unknown;
+      };
+    };
+  };
+  _links?: {
+    self?: { href: string };
+    [key: string]: unknown;
+  };
+}
+
+export interface CurrentlySupportedVersionsResponse {
+  _embedded?: {
+    releasedVersions?: ReleasedVersion[];
+  };
+  _links?: {
+    self?: { href: string; title?: string };
+    [key: string]: unknown;
+  };
+}
+
 // ---------------------------------------------------------------------------
 // HTTP helper
 // ---------------------------------------------------------------------------
@@ -540,6 +612,78 @@ export async function getPacticipantBranchLatestVersion(
     pacticipantName,
   )}/branches/${encodeURIComponent(branchName)}/latest-version`;
   return fetchJSON<BranchVersion>(url, config);
+}
+
+/**
+ * Get versions currently deployed to an environment.
+ *
+ * Resolves the environment UUID using the broker's environments list, then calls
+ * `/environments/{uuid}/deployed-versions/currently-deployed`.
+ */
+export async function getCurrentlyDeployedVersions(
+  config: PactBrokerConfig,
+  environmentName: string,
+): Promise<{ environment: Environment; deployedVersions: DeployedVersion[] }> {
+  const environments = await listEnvironments(config);
+
+  const normalized = environmentName.trim().toLowerCase();
+  const matches = environments.filter((e) => {
+    const n = e.name?.toLowerCase();
+    const dn = e.displayName?.toLowerCase();
+    return n === normalized || dn === normalized;
+  });
+
+  if (matches.length === 0) {
+    throw new Error(
+      `Environment not found: "${environmentName}". Use list_environments to see available environments.`,
+    );
+  }
+
+  const environment = matches[0];
+  const url = `${config.brokerUrl}/environments/${encodeURIComponent(
+    environment.uuid,
+  )}/deployed-versions/currently-deployed`;
+
+  const data = await fetchJSON<CurrentlyDeployedVersionsResponse>(url, config);
+  const deployedVersions = data._embedded?.deployedVersions ?? [];
+
+  return { environment, deployedVersions };
+}
+
+/**
+ * Get versions currently supported in an environment.
+ *
+ * Resolves the environment UUID using the broker's environments list, then calls
+ * `/environments/{uuid}/released-versions/currently-supported`.
+ */
+export async function getCurrentlySupportedVersions(
+  config: PactBrokerConfig,
+  environmentName: string,
+): Promise<{ environment: Environment; releasedVersions: ReleasedVersion[] }> {
+  const environments = await listEnvironments(config);
+
+  const normalized = environmentName.trim().toLowerCase();
+  const matches = environments.filter((e) => {
+    const n = e.name?.toLowerCase();
+    const dn = e.displayName?.toLowerCase();
+    return n === normalized || dn === normalized;
+  });
+
+  if (matches.length === 0) {
+    throw new Error(
+      `Environment not found: "${environmentName}". Use list_environments to see available environments.`,
+    );
+  }
+
+  const environment = matches[0];
+  const url = `${config.brokerUrl}/environments/${encodeURIComponent(
+    environment.uuid,
+  )}/released-versions/currently-supported`;
+
+  const data = await fetchJSON<CurrentlySupportedVersionsResponse>(url, config);
+  const releasedVersions = data._embedded?.releasedVersions ?? [];
+
+  return { environment, releasedVersions };
 }
 
 // ---------------------------------------------------------------------------

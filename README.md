@@ -22,6 +22,8 @@ Exposes Pact Broker data â€” providers, consumers, pacts, and provider states â€
 | `get_latest_verification_results_for_pact_version` | Get the latest verification results for a pact-version UUID (or `null` if none exist)               |
 | `can_i_deploy`                                     | Check if a pacticipant version can be safely deployed to an environment                             |
 | `list_environments`                                | List all environments registered in the Pact Broker                                                 |
+| `get_currently_deployed_versions`                  | Get pacticipant versions currently deployed to an environment                                       |
+| `get_currently_supported_versions`                 | Get pacticipant versions currently supported in an environment                                      |
 | `get_pacticipant_branches`                         | Get all branches for a specific pacticipant                                                         |
 | `get_pacticipant_branch_latest_version`            | Get the latest version for a specific branch of a pacticipant                                       |
 

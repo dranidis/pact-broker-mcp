@@ -61,6 +61,12 @@ export const PacticipantBranchSchema = z.object({
   branch: z.string().describe("Name of the branch"),
 });
 
+export const EnvironmentSchema = z.object({
+  environment: z
+    .string()
+    .describe("Environment name (e.g., 'Production', 'production', 'staging')"),
+});
+
 // ---------------------------------------------------------------------------
 // Tool metadata (name + description used when registering with MCP)
 // ---------------------------------------------------------------------------
@@ -160,4 +166,18 @@ export const TOOL_GET_PACTICIPANT_BRANCH_LATEST_VERSION = {
   name: "get_pacticipant_branch_latest_version",
   description: "Get the latest version for a specific branch of a pacticipant.",
   schema: PacticipantBranchSchema,
+} as const;
+
+export const TOOL_GET_CURRENTLY_DEPLOYED_VERSIONS = {
+  name: "get_currently_deployed_versions",
+  description:
+    "Get pacticipant versions currently deployed to a given environment. There is always only one version of a pacticipant that is currently deployed in an environment.",
+  schema: EnvironmentSchema,
+} as const;
+
+export const TOOL_GET_CURRENTLY_SUPPORTED_VERSIONS = {
+  name: "get_currently_supported_versions",
+  description:
+    "Get pacticipant versions currently supported in a given environment. There may be multiple released versions of a pacticipant that are still supported in an environment.",
+  schema: EnvironmentSchema,
 } as const;
