@@ -23,7 +23,7 @@ Exposes Pact Broker data â€” providers, consumers, pacts, and provider states â€
 | `can_i_deploy`                                     | Check if a pacticipant version can be safely deployed to an environment                             |
 | `list_environments`                                | List all environments registered in the Pact Broker                                                 |
 | `get_currently_deployed_versions`                  | Get pacticipant versions currently deployed to an environment                                       |
-| `get_currently_supported_versions`                 | Get pacticipant versions currently supported in an environment                                      |
+| `get_currently_supported_versions`                 | Get pacticipant versions currently supported (released) in an environment                           |
 | `get_pacticipant_branches`                         | Get all branches for a specific pacticipant                                                         |
 | `get_pacticipant_branch_latest_version`            | Get the latest version for a specific branch of a pacticipant                                       |
 
@@ -39,6 +39,8 @@ The Pact Broker connection is configured via environment variables:
 | `PACT_BROKER_USERNAME` | No       | Username for basic authentication                                  |
 | `PACT_BROKER_PASSWORD` | No       | Password for basic authentication                                  |
 | `PACT_BROKER_TOKEN`    | No       | Bearer token for authentication (alternative to username/password) |
+
+All tools are currently read tools, so authentication is not necesary unless it is required for visiting the pact-borker.
 
 **Authentication priority**: If both basic auth (username/password) and bearer token are provided, bearer token takes precedence.
 
@@ -58,15 +60,7 @@ npm install
 npm run build
 ```
 
-**Important**: After installing dependencies, restart Claude Desktop to pick up the changes.
-
-### Development (with hot reload)
-
-```bash
-npm run dev
-```
-
----
+**Important**: After installing, restart the AI application to pick up the changes.
 
 ## Using with Claude Desktop
 
@@ -88,27 +82,11 @@ Add the server to your `claude_desktop_config.json` with environment variables:
 }
 ```
 
-Or with bearer token authentication:
-
-```json
-{
-  "mcpServers": {
-    "pact-broker": {
-      "command": "node",
-      "args": ["/absolute/path/to/pact-broker-mcp/dist/index.js"],
-      "env": {
-        "PACT_BROKER_BASE_URL": "https://broker.example.com",
-        "PACT_BROKER_TOKEN": "your-bearer-token"
-      }
-    }
-  }
-}
-```
-
 Config file locations:
 
 - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+- **Linux**: `~/.config/Claude/claude_desktop_config.json`
 
 ---
 
@@ -129,7 +107,7 @@ codex mcp add pact-broker-mcp --env PACT_BROKER_BASE_URL=https://broker.example.
 
 ## Example Prompts
 
-Once connected, you can ask Claude things like:
+Once connected, you can ask the AI application things like:
 
 > "List all providers in my pact broker"
 
@@ -142,6 +120,10 @@ Once connected, you can ask Claude things like:
 > "Is it safe to deploy the OrderConsumer version abc123 to staging?"
 
 > "What environments are available in the Pact Broker?"
+
+> "Show me the versions currently deployed to Production"
+
+> "Show me the versions currently supported in Production"
 
 > "Show me all branches for the PaymentService"
 
@@ -163,13 +145,3 @@ src/
   pact-broker-client.ts  # HTTP client for the Pact Broker REST API
   tools.ts               # Zod schemas & tool metadata
 ```
-
----
-
-## Roadmap
-
-- [x] Can-I-deploy checks
-- [ ] Webhook management
-- [ ] Version/tag management
-- [ ] Verification result publishing
-- [ ] Network (dependency graph) queries
