@@ -65,8 +65,8 @@ import {
   TOOL_GET_PROVIDER_PACTS,
   TOOL_GET_PROVIDER_STATES,
   TOOL_LIST_ENVIRONMENTS,
-  TOOL_LIST_PACTICIPANTS,
-  TOOL_LIST_PROVIDERS,
+  TOOL_LIST_PACTICIPANT_NAMES,
+  TOOL_LIST_PROVIDER_NAMES,
 } from "./tools.js";
 
 // ---------------------------------------------------------------------------
@@ -95,14 +95,14 @@ const server = mcpServer.server;
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     {
-      name: TOOL_LIST_PACTICIPANTS.name,
-      description: TOOL_LIST_PACTICIPANTS.description,
-      inputSchema: zodToJsonSchema(TOOL_LIST_PACTICIPANTS.schema),
+      name: TOOL_LIST_PACTICIPANT_NAMES.name,
+      description: TOOL_LIST_PACTICIPANT_NAMES.description,
+      inputSchema: zodToJsonSchema(TOOL_LIST_PACTICIPANT_NAMES.schema),
     },
     {
-      name: TOOL_LIST_PROVIDERS.name,
-      description: TOOL_LIST_PROVIDERS.description,
-      inputSchema: zodToJsonSchema(TOOL_LIST_PROVIDERS.schema),
+      name: TOOL_LIST_PROVIDER_NAMES.name,
+      description: TOOL_LIST_PROVIDER_NAMES.description,
+      inputSchema: zodToJsonSchema(TOOL_LIST_PROVIDER_NAMES.schema),
     },
     {
       name: TOOL_GET_PACTICIPANT.name,
@@ -194,7 +194,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   try {
     switch (name) {
       // -----------------------------------------------------------------------
-      case TOOL_LIST_PACTICIPANTS.name: {
+      case TOOL_LIST_PACTICIPANT_NAMES.name: {
         EmptySchema.parse(args);
         const config = buildConfig();
         const pacticipants = await listPacticipants(config);
@@ -205,11 +205,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               text: JSON.stringify(
                 pacticipants.map((p) => ({
                   name: p.name,
-                  displayName: p.displayName,
-                  repositoryUrl: p.repositoryUrl,
-                  mainBranch: p.mainBranch,
-                  createdAt: p.createdAt,
-                  updatedAt: p.updatedAt,
                 })),
                 null,
                 2,
@@ -220,7 +215,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       // -----------------------------------------------------------------------
-      case TOOL_LIST_PROVIDERS.name: {
+      case TOOL_LIST_PROVIDER_NAMES.name: {
         EmptySchema.parse(args);
         const config = buildConfig();
         const providers = await listProviders(config);
@@ -231,9 +226,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               text: JSON.stringify(
                 providers.map((p) => ({
                   name: p.name,
-                  displayName: p.displayName,
-                  repositoryUrl: p.repositoryUrl,
-                  mainBranch: p.mainBranch,
                 })),
                 null,
                 2,

@@ -71,17 +71,17 @@ export const EnvironmentSchema = z.object({
 // Tool metadata (name + description used when registering with MCP)
 // ---------------------------------------------------------------------------
 
-export const TOOL_LIST_PACTICIPANTS = {
-  name: "list_pacticipants",
+export const TOOL_LIST_PACTICIPANT_NAMES = {
+  name: "list_pacticipant_names",
   description:
-    "List all pacticipants (both consumers and providers) registered in the Pact Broker.",
+    "List the names of all pacticipants (both consumers and providers) registered in the Pact Broker.",
   schema: EmptySchema,
 } as const;
 
-export const TOOL_LIST_PROVIDERS = {
-  name: "list_providers",
+export const TOOL_LIST_PROVIDER_NAMES = {
+  name: "list_provider_names",
   description:
-    "List all providers registered in the Pact Broker — i.e. pacticipants that appear as the provider in at least one of the latest pacts.",
+    "List the names of all providers registered in the Pact Broker — i.e. pacticipants that appear as the provider in at least one of the latest pacts.",
   schema: EmptySchema,
 } as const;
 
