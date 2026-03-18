@@ -17,6 +17,7 @@ Exposes Pact Broker data â€” providers, consumers, pacts, and provider states â€
 | `get_provider_pacts`                               | Get latest pact versions for a provider (one per consumer)                                          |
 | `get_consumer_pacts`                               | Get latest pact versions for a consumer (one per provider)                                          |
 | `get_pact`                                         | Fetch the full latest pact JSON for a consumer/provider pair                                        |
+| `get_pact_by_version`                              | Fetch the full pact JSON for a consumer/provider pair at a given consumer version                   |
 | `get_previous_distinct_pact`                       | Fetch the previous distinct pact for a consumer/provider at a given consumer version (or `null`)    |
 | `get_pact_version`                                 | Get the Pact Broker pact-version UUID for a pact identified by consumer/provider + consumer version |
 | `get_latest_verification_results_for_pact_version` | Get the latest verification results for a pact-version UUID (or `null` if none exist)               |

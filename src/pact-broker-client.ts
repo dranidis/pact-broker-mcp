@@ -433,6 +433,27 @@ export async function getLatestPact(
 }
 
 /**
+ * Fetch and return the raw pact JSON for a specific consumer version.
+ *
+ * This uses the Pact Broker endpoint:
+ * `/pacts/provider/{provider}/consumer/{consumer}/version/{consumerVersion}`
+ */
+export async function getPactByConsumerVersion(
+  config: PactBrokerConfig,
+  consumerName: string,
+  providerName: string,
+  consumerVersion: string,
+): Promise<unknown> {
+  const url = `${config.brokerUrl}/pacts/provider/${encodeURIComponent(
+    providerName,
+  )}/consumer/${encodeURIComponent(consumerName)}/version/${encodeURIComponent(
+    consumerVersion,
+  )}`;
+
+  return fetchJSON<unknown>(url, config);
+}
+
+/**
  * Get the Pact Broker pact-version UUID for a pact identified by provider, consumer and consumer version.
  */
 export async function getPactVersion(

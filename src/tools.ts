@@ -120,6 +120,13 @@ export const TOOL_GET_PACT = {
   schema: ConsumerProviderNamesSchema,
 } as const;
 
+export const TOOL_GET_PACT_BY_VERSION = {
+  name: "get_pact_by_version",
+  description:
+    "Fetch the full pact JSON for a specific provider/consumer pair at a given consumer version.",
+  schema: ConsumerProviderConsumerVersionSchema,
+} as const;
+
 export const TOOL_GET_PREVIOUS_DISTINCT_PACT = {
   name: "get_previous_distinct_pact",
   description:

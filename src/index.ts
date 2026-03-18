@@ -28,6 +28,7 @@ import {
   getPacticipantBranchLatestVersion,
   getConsumerLatestPacts,
   getLatestPact,
+  getPactByConsumerVersion,
   getPacticipant,
   getPactVersion,
   getLatestVerificationResultsForPactVersion,
@@ -58,6 +59,7 @@ import {
   TOOL_GET_CURRENTLY_SUPPORTED_VERSIONS,
   TOOL_GET_CONSUMER_PACTS,
   TOOL_GET_PACT,
+  TOOL_GET_PACT_BY_VERSION,
   TOOL_GET_PACTICIPANT,
   TOOL_GET_PACT_VERSION,
   TOOL_GET_LATEST_VERIFICATION_RESULTS_FOR_PACT_VERSION,
@@ -128,6 +130,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       name: TOOL_GET_PACT.name,
       description: TOOL_GET_PACT.description,
       inputSchema: zodToJsonSchema(TOOL_GET_PACT.schema),
+    },
+    {
+      name: TOOL_GET_PACT_BY_VERSION.name,
+      description: TOOL_GET_PACT_BY_VERSION.description,
+      inputSchema: zodToJsonSchema(TOOL_GET_PACT_BY_VERSION.schema),
     },
     {
       name: TOOL_GET_PACT_VERSION.name,
@@ -349,6 +356,28 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           input.consumer_name,
           input.provider_name,
         );
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(pact, null, 2),
+            },
+          ],
+        };
+      }
+
+      // -----------------------------------------------------------------------
+      case TOOL_GET_PACT_BY_VERSION.name: {
+        const input = ConsumerProviderConsumerVersionSchema.parse(args);
+        const config = buildConfig();
+
+        const pact = await getPactByConsumerVersion(
+          config,
+          input.consumer_name,
+          input.provider_name,
+          input.consumer_version,
+        );
+
         return {
           content: [
             {
